@@ -1,0 +1,48 @@
+5-11-2015 Steve K9AN
+
+The decoder now works with wspr-15 files. The -m option must be used to 
+decode a 15-minute .wav file. The option does not take an argument like the 
+old wsprd. 
+
+Also added "slow" mode (-s option). Currently, it is 20000 cycles and ii=1
+
+5-8-2015 Joe Taylor, K1JT and Steve Franke, K9AN
+
+Merged in Joe Taylor's modifications which yield a huge speed improvement
+and also increase # of decodes by 2-3%. Speed improvement ranges from a
+factor of 4 to a factor of 8 depending on noise type, with the larger 
+improvements associated with files that contain significant lightning events.
+
+3-7-2015 Steve K9AN
+
+Fixed a problem that affected extended callsigns with a 2-character suffix.
+
+2-20-2015 Steve K9AN
+
+Fixed a bug that caused slight frequency error (less than 0.5 Hz). Thanks
+to Glenn, N6GN for pointing me toward this issue.
+
+Also added one more digit of precision to frequency reports in ALL_WSPR.TXT.
+This will be used to study the variability of frequency estimates.
+
+2-16-2015 Steve K9AN
+
+Applied grid6 patch contributed by John, KD6EKQ. This fixes a bug that
+caused the displayed 6-digit locator to be corrupted when there were two
+or more type 3 messages decoded.
+
+2-15-2015 Steve K9AN
+
+Applied patch file contributed by John, KD6EKQ. This adds the following:
+
+* Added the ability to read and incorporate fftw wisdom to speed up the
+DFT transforms when using PCM WAV input files. The code checks for the
+"WSPRD_FFTW_WISDOM" environment variable. If set, it specifies the
+file with fftw wisdom.
+
+* Relaxed the error checks on PCM WAV input files to allow 24, 32 bit and
+float sample formats (libsndfile handles the details of the conversion,
+so there is no real reason to exclude such files).
+
+* Added the -e command line option. It enables code that corrects for
+transceiver tuning error. The argument is the dial freq error in Hz.
