@@ -5,7 +5,7 @@ The program is written in C and is a command-line program that reads from a
 it can be used as a drop-in replacement for the wsprd program that wspr-x uses 
 for decoding. 
 
-k9an-wsprd requires only two external libraries: libsndfile and libfftw3
+k9an-wsprd requires only one external library: libfftw3
 
 COMPILING:
 A bare-bones Makefile is included. 
@@ -44,10 +44,6 @@ decode more potential signals. Sometimes, it gets lucky!
 
 The symbols are decoded using Phil Karn's sequential decoder routine,
 fano.c.
-
-The code checks for the "WSPRD_FFTW_WISDOM" environment variable. If set, this
-variable specifies the file that contains the fftw wisdom.
-
 
 NOTES:
 This program attempts to maximize the number of successful decodes per transmit
