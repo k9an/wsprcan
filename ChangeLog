@@ -1,8 +1,8 @@
 5-11-2015 Steve K9AN
 
-The decoder now works with wspr-15 files. The -m option must be used to 
-decode a 15-minute .wav file. The option does not take an argument like the 
-old wsprd. 
+The decoder now works with wspr-15 files. It will automatically detect the
+mode for a .c2 file. The -m option (no argument) must be used to decode
+a wspr-15 .wav file.
 
 Also added "slow" mode (-s option). Currently, it is 20000 cycles and ii=1
 
