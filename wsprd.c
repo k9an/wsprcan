@@ -189,8 +189,8 @@ void sync_and_demodulate(double *id, double *qd, long np,
 
   float dt=1.0/375.0, df=375.0/256.0,fbest=0.0;
   int i, j, k;
-  double pi=4.*atan(1.0);
-  float f0=0.0,fp,ss;
+  double pi=4.*atan(1.0),twopidt;
+  float f0=0.0,fp,fplast=-10000.0,ss;
   int lag;
     
   double i0[162],q0[162],i1[162],q1[162],i2[162],q2[162],i3[162],q3[162];
@@ -207,6 +207,7 @@ void sync_and_demodulate(double *id, double *qd, long np,
   if( mode == 1 ) {lagmin=*shift1;lagmax=*shift1;ifmin=-5;ifmax=5;f0=*f1;}
   if( mode == 2 ) {lagmin=*shift1;lagmax=*shift1;ifmin=0;ifmax=0;f0=*f1;}
 
+  twopidt=2.0*pi*dt;
   for(ifreq=ifmin; ifreq<=ifmax; ifreq++) {
     f0=*f1+ifreq*fstep;
     for(lag=lagmin; lag<=lagmax; lag=lag+lagstep) {
@@ -214,37 +215,40 @@ void sync_and_demodulate(double *id, double *qd, long np,
       totp=0.0;
       for (i=0; i<162; i++) {
 	fp = f0 + ((float)*drift1/2.0)*((float)i-81.0)/81.0;
-	dphi0=2*pi*(fp-1.5*df)*dt;
-	cdphi0=cos(dphi0);
-	sdphi0=sin(dphi0);
+        if( i==0 || (fp != fplast) ) {  //only calculate sin/cos if necessary
+	  dphi0=twopidt*(fp-1.5*df);
+	  cdphi0=cos(dphi0);
+	  sdphi0=sin(dphi0);
 
-	dphi1=2*pi*(fp-0.5*df)*dt;
-	cdphi1=cos(dphi1);
-	sdphi1=sin(dphi1);
+	  dphi1=twopidt*(fp-0.5*df);
+	  cdphi1=cos(dphi1);
+	  sdphi1=sin(dphi1);
 
-	dphi2=2*pi*(fp+0.5*df)*dt;
-	cdphi2=cos(dphi2);
-	sdphi2=sin(dphi2);
+	  dphi2=twopidt*(fp+0.5*df);
+	  cdphi2=cos(dphi2);
+	  sdphi2=sin(dphi2);
 
-	dphi3=2*pi*(fp+1.5*df)*dt;
-	cdphi3=cos(dphi3);
-	sdphi3=sin(dphi3);
+	  dphi3=twopidt*(fp+1.5*df);
+	  cdphi3=cos(dphi3);
+	  sdphi3=sin(dphi3);
                 
-	c0[0]=1; s0[0]=0; 
-	c1[0]=1; s1[0]=0;
-	c2[0]=1; s2[0]=0; 
-	c3[0]=1; s3[0]=0;
+	  c0[0]=1; s0[0]=0; 
+	  c1[0]=1; s1[0]=0;
+	  c2[0]=1; s2[0]=0; 
+	  c3[0]=1; s3[0]=0;
                 
-	for (j=1; j<256; j++) {
-	  c0[j]=c0[j-1]*cdphi0 - s0[j-1]*sdphi0;
-	  s0[j]=c0[j-1]*sdphi0 + s0[j-1]*cdphi0;
-	  c1[j]=c1[j-1]*cdphi1 - s1[j-1]*sdphi1;
-	  s1[j]=c1[j-1]*sdphi1 + s1[j-1]*cdphi1;
-	  c2[j]=c2[j-1]*cdphi2 - s2[j-1]*sdphi2;
-	  s2[j]=c2[j-1]*sdphi2 + s2[j-1]*cdphi2;
-	  c3[j]=c3[j-1]*cdphi3 - s3[j-1]*sdphi3;
-	  s3[j]=c3[j-1]*sdphi3 + s3[j-1]*cdphi3;
-	}
+	  for (j=1; j<256; j++) {
+	    c0[j]=c0[j-1]*cdphi0 - s0[j-1]*sdphi0;
+	    s0[j]=c0[j-1]*sdphi0 + s0[j-1]*cdphi0;
+	    c1[j]=c1[j-1]*cdphi1 - s1[j-1]*sdphi1;
+	    s1[j]=c1[j-1]*sdphi1 + s1[j-1]*cdphi1;
+	    c2[j]=c2[j-1]*cdphi2 - s2[j-1]*sdphi2;
+	    s2[j]=c2[j-1]*sdphi2 + s2[j-1]*cdphi2;
+	    c3[j]=c3[j-1]*cdphi3 - s3[j-1]*sdphi3;
+	    s3[j]=c3[j-1]*sdphi3 + s3[j-1]*cdphi3;
+	  }
+          fplast = fp;
+        }
                 
 	i0[i]=0.0; q0[i]=0.0;
 	i1[i]=0.0; q1[i]=0.0;

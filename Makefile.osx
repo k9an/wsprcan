@@ -1,5 +1,5 @@
 CC=clang
-CFLAGS= -I/opt/local/include -Wall -O2
+CFLAGS= -I/opt/local/include -Wall -O2 -Wno-missing-braces
 LDFLAGS = -L/opt/local/lib 
 LIBS = -lfftw3 -lm
 
