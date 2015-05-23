@@ -344,7 +344,7 @@ void usage(void)
   printf("       -s slow mode - much slower, yields a few more decodes\n");
   printf("       -v verbose mode\n");
   printf("       -w wideband mode - decode signals within +/- 150 Hz of center\n");
-  printf("       -z x (x is fano metric table bias, default is 0.42\n");
+  printf("       -z x (x is fano metric table bias, default is 0.42)\n");
 }
 
 //***************************************************************************
