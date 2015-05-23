@@ -1,3 +1,17 @@
+5-23-2015
+
+Merged in K1JT's changes, including the new -a option to move output files.
+Speed up sync_and_demodulation function by calculating sin/cos tables only
+when necessary.
+Improved metric table calculation, and added -z option to allow variable
+metric table bias. This gives us a single "knob" which can be tuned to 
+trade off probability of timeout (erasures) vs probability of bit errors.
+-z 0.5 corresponds to the "standard" bias, equal to the code rate. Smaller
+bias values result in higher path metrics,  making it more likely that 
+the Fano algorithm will make it to the final node within the allowed 
+number of cycles, but also increasing the probability that the final 
+result will contain an error...
+
 5-11-2015 Steve K9AN
 
 The decoder now works with wspr-15 files. It will automatically detect the

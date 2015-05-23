@@ -187,7 +187,7 @@ void sync_and_demodulate(double *id, double *qd, long np,
 *           symbols using passed frequency and shift.                  *
 ************************************************************************/
 
-  float dt=1.0/375.0, df=375.0/256.0,fbest=0.0;
+  float dt=1.0/375.0, df=375.0/256.0, fbest=0.0;
   int i, j, k;
   double pi=4.*atan(1.0),twopidt;
   float f0=0.0,fp,fplast=-10000.0,ss;
@@ -207,7 +207,7 @@ void sync_and_demodulate(double *id, double *qd, long np,
   if( mode == 1 ) {lagmin=*shift1;lagmax=*shift1;ifmin=-5;ifmax=5;f0=*f1;}
   if( mode == 2 ) {lagmin=*shift1;lagmax=*shift1;ifmin=0;ifmax=0;f0=*f1;}
 
-  twopidt=2.0*pi*dt;
+  twopidt=2*pi*dt;
   for(ifreq=ifmin; ifreq<=ifmax; ifreq++) {
     f0=*f1+ifreq*fstep;
     for(lag=lagmin; lag<=lagmax; lag=lag+lagstep) {
@@ -215,8 +215,8 @@ void sync_and_demodulate(double *id, double *qd, long np,
       totp=0.0;
       for (i=0; i<162; i++) {
 	fp = f0 + ((float)*drift1/2.0)*((float)i-81.0)/81.0;
-        if( i==0 || (fp != fplast) ) {  //only calculate sin/cos if necessary
-	  dphi0=twopidt*(fp-1.5*df);
+        if( i==0 || (fp != fplast) ) {  // only calculate sin/cos if necessary
+	  dphi0=2*pi*(fp-1.5*df)*dt;
 	  cdphi0=cos(dphi0);
 	  sdphi0=sin(dphi0);
 
@@ -330,6 +330,7 @@ void usage(void)
   printf("       infile must have suffix .wav or .c2\n");
   printf("\n");
   printf("Options:\n");
+  printf("       -a <path> path to writeable data files, default=\".\"\n");
   printf("       -e x (x is transceiver dial frequency error in Hz)\n");
   printf("       -f x (x is transceiver dial frequency in MHz)\n");
 // blanking is not yet implemented. The options are accepted for compatibility
@@ -343,6 +344,7 @@ void usage(void)
   printf("       -s slow mode - much slower, yields a few more decodes\n");
   printf("       -v verbose mode\n");
   printf("       -w wideband mode - decode signals within +/- 150 Hz of center\n");
+  printf("       -z x (x is fano metric table bias, default is 0.42\n");
 }
 
 //***************************************************************************
@@ -355,6 +357,9 @@ int main(int argc, char *argv[])
   signed char message[]={-9,13,-35,123,57,-39,64,0,0,0,0};
   char *callsign,*grid,*grid6, *call_loc_pow, *cdbm;
   char *ptr_to_infile,*ptr_to_infile_suffix;
+  char *data_dir=NULL;
+  char wisdom_fname[200],all_fname[200],spots_fname[200];
+  char timer_fname[200],hash_fname[200];
   char uttime[5],date[7];
   int c,delta,maxpts=65536,verbose=0,quickmode=0,writenoise=0,usehashtable=1,wspr_type=2;
   int shift1, lagmin, lagmax, lagstep, worth_a_try, not_decoded, nadd, ndbm;
@@ -379,27 +384,26 @@ int main(int argc, char *argv[])
   double minsync1=0.10;                    //First sync limit
   double minsync2=0.12;                    //Second sync limit
   int iifac=3;                             //Step size in final DT peakup
-  int symfac=45;                           //Soft-symbol normalizing factor
+  int symfac=50;                           //Soft-symbol normalizing factor
   int maxdrift=4;                          //Maximum (+/-) drift
-  double minrms=52.0 * (symfac/64.0);      //Final test for palusible decoding
+  double minrms=52.0 * (symfac/64.0);      //Final test for plausible decoding
   delta=60;                                //Fano threshold step
 
   t00=clock();
   fftw_complex *fftin, *fftout;
-#include "./mettab.c"
+#include "./metric_tables.c"
 
-// Check for an optional FFTW wisdom file
-  FILE *fp_fftw_wisdom_file;
-  if ((fp_fftw_wisdom_file = fopen("fftw_wisdom_wsprd", "r"))) {
-    fftw_import_wisdom_from_file(fp_fftw_wisdom_file);
-    fclose(fp_fftw_wisdom_file);
-  }
+  int mettab[2][256];
+  float bias=0.42;
 
   idat=malloc(sizeof(double)*maxpts);
   qdat=malloc(sizeof(double)*maxpts);
 
-  while ( (c = getopt(argc, argv, "b:e:f:Hmnqst:wv")) !=-1 ) {
+  while ( (c = getopt(argc, argv, "a:b:e:f:Hmnqst:wvz:")) !=-1 ) {
     switch (c) {
+    case 'a':
+      data_dir = optarg;
+      break;
     case 'b':
       fblank = strtof(optarg,NULL);
       break;
@@ -436,6 +440,9 @@ int main(int argc, char *argv[])
       fmin=-150.0;
       fmax=150.0;
       break;
+    case 'z':
+      bias=strtof(optarg,NULL); //fano metric bias (default is 0.42)
+      break;
     case '?':
       usage();
       return 1;
@@ -449,19 +456,47 @@ int main(int argc, char *argv[])
     ptr_to_infile=argv[optind];
   }
 
-  FILE *fall_wspr, *fwsprd, *fhash, *ftimer;
-  FILE *fdiag;
-  fall_wspr=fopen("ALL_WSPR.TXT","a");
-  fwsprd=fopen("wsprd.out","w");
-  fdiag=fopen("wsprd_diag","a");
+// setup metric table
+  for(i=0; i<256; i++) {
+    mettab[0][i]=round( 10*(metric_tables[2][i]-bias) );
+    mettab[1][i]=round( 10*(metric_tables[2][255-i]-bias) );
+  }
 
-  if((ftimer=fopen("wsprd_timer","r"))) {
+  FILE *fp_fftw_wisdom_file, *fall_wspr, *fwsprd, *fhash, *ftimer;
+  strcpy(wisdom_fname,".");
+  strcpy(all_fname,".");
+  strcpy(spots_fname,".");
+  strcpy(timer_fname,".");
+  strcpy(hash_fname,".");
+  if(data_dir != NULL) {
+    strcpy(wisdom_fname,data_dir);
+    strcpy(all_fname,data_dir);
+    strcpy(spots_fname,data_dir);
+    strcpy(timer_fname,data_dir);
+    strcpy(hash_fname,data_dir);
+  }
+  strncat(wisdom_fname,"/wspr_wisdom.dat",20);
+  strncat(all_fname,"/ALL_WSPR.TXT",20);
+  strncat(spots_fname,"/wspr_spots.txt",20);
+  strncat(timer_fname,"/wspr_timer.out",20);
+  strncat(hash_fname,"/hashtable.txt",20);
+  if ((fp_fftw_wisdom_file = fopen(wisdom_fname, "r"))) {  //Open FFTW wisdom
+    fftw_import_wisdom_from_file(fp_fftw_wisdom_file);
+    fclose(fp_fftw_wisdom_file);
+  }
+    
+  fall_wspr=fopen(all_fname,"a");
+  fwsprd=fopen(spots_fname,"w");
+  //  FILE *fdiag;
+  //  fdiag=fopen("wsprd_diag","a");
+
+  if((ftimer=fopen(timer_fname,"r"))) {
     //Accumulate timing data
     nr=fscanf(ftimer,"%lf %lf %lf %lf %lf %lf %lf",
 	   &treadwav,&tcandidates,&tsync0,&tsync1,&tsync2,&tfano,&ttotal);
     fclose(ftimer);
   }
-  ftimer=fopen("wsprd_timer","w");
+  ftimer=fopen(timer_fname,"w");
 
   if( strstr(ptr_to_infile,".wav") ) {
     ptr_to_infile_suffix=strstr(ptr_to_infile,".wav");
@@ -502,7 +537,7 @@ int main(int argc, char *argv[])
   float ps[512][nffts];
   float w[512];
   for(i=0; i<512; i++) {
-    w[i]=sin(0.006135923*i);
+    w[i]=sin(0.006147931*i);
   }
 
   memset(ps,0.0, sizeof(float)*512*nffts);
@@ -689,18 +724,18 @@ int main(int argc, char *argv[])
   memset(cdbm,0,sizeof(char)*3);
   char hashtab[32768][13];
   memset(hashtab,0,sizeof(char)*32768*13);
-  uint32_t nhash( const void *, size_t, uint32_t);
+  uint32_t nhash_( const void *, size_t, uint32_t);
   int nh;
     
   if( usehashtable ) {
     char line[80], hcall[12];
-    if( (fhash=fopen("hashtable.txt","r+")) ) {
+    if( (fhash=fopen(hash_fname,"r+")) ) {
       while (fgets(line, sizeof(line), fhash) != NULL) {
 	sscanf(line,"%d %s",&nh,hcall);
 	strcpy(*hashtab+nh*13,hcall);
       }
     } else {
-      fhash=fopen("hashtable.txt","w+");
+      fhash=fopen(hash_fname,"w+");
     }
     fclose(fhash);
   }
@@ -777,14 +812,14 @@ could each work on one candidate at a time.
 	    sq += y*y;
       }
       rms=sqrt(sq/162.0);
-
+        
       if((sync1 > minsync2) && (rms > minrms)) {
 	    deinterleave(symbols);
 	    t0 = clock();
 	    not_decoded = fano(&metric,&cycles,&maxnp,decdata,symbols,nbits,
 			     mettab,delta,maxcycles);
 	    tfano += (double)(clock()-t0)/CLOCKS_PER_SEC;
-
+          
 	/* ### Used for timing tests:
 	if(not_decoded) fprintf(fdiag,
 	    "%6s %4s %4.1f %3.0f %4.1f %10.7f  %-18s %2d %5u %4d %6.1f %2d\n",
@@ -836,7 +871,7 @@ could each work on one candidate at a time.
 	  strncat(call_loc_pow,cdbm,2);
 	  strncat(call_loc_pow,"\0",1);
                     
-	  ihash=nhash(callsign,strlen(callsign),(uint32_t)146);
+	  ihash=nhash_(callsign,strlen(callsign),(uint32_t)146);
 	  strcpy(*hashtab+ihash*13,callsign);
 
 	  noprint=0;
@@ -847,7 +882,7 @@ could each work on one candidate at a time.
 	  n3=n2/128+32768*(nadd-1);
 	  unpackpfx(n3,callsign);
 	  ndbm=ntype-nadd;
-
+          
 	  memset(call_loc_pow,0,sizeof(char)*23);
 	  sprintf(cdbm,"%2d",ndbm);
 	  strncat(call_loc_pow,callsign,strlen(callsign));
@@ -855,7 +890,7 @@ could each work on one candidate at a time.
 	  strncat(call_loc_pow,cdbm,2);
 	  strncat(call_loc_pow,"\0",1);
                     
-	  ihash=nhash(callsign,strlen(callsign),(uint32_t)146);
+	  ihash=nhash_(callsign,strlen(callsign),(uint32_t)146);
 	  strcpy(*hashtab+ihash*13,callsign);
 
 	  noprint=0;
@@ -936,7 +971,7 @@ could each work on one candidate at a time.
   }
   printf("<DecodeFinished>\n");
 
-  if ((fp_fftw_wisdom_file = fopen("fftw_wisdom_wsprd", "w"))) {
+  if ((fp_fftw_wisdom_file = fopen(wisdom_fname, "w"))) {
     fftw_export_wisdom_to_file(fp_fftw_wisdom_file);
     fclose(fp_fftw_wisdom_file);
   }
@@ -960,14 +995,14 @@ could each work on one candidate at a time.
 
   fclose(fall_wspr);
   fclose(fwsprd);
-  fclose(fdiag);
+  //  fclose(fdiag);
   fclose(ftimer);
   fftw_destroy_plan(PLAN1);
   fftw_destroy_plan(PLAN2);
   fftw_destroy_plan(PLAN3);
 
   if( usehashtable ) {
-    fhash=fopen("hashtable.txt","w");
+    fhash=fopen(hash_fname,"w");
     for (i=0; i<32768; i++) {
       if( strncmp(hashtab[i],"\0",1) != 0 ) {
 	fprintf(fhash,"%5d %s\n",i,*hashtab+i*13);
