@@ -1,3 +1,8 @@
+5-24-2015 
+
+Moved all callsign unpacking into a function. Added some sanity checks
+on decoded power and grid.
+
 5-23-2015
 
 Merged in K1JT's changes, including the new -a option to move output files.
