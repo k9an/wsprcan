@@ -13,15 +13,16 @@ A bare-bones Makefile is included.
 USAGE:
 k9an-wsprd [-nqwv] [-f freq] [-e error] infile
 
-    -e error (error is dial frequency error in Hz)
-    -f freq (freq is dial frequency in MHz)
+    -a <path> path to writeable data files, default="."
+    -e <error> (error is dial frequency error in Hz)
+    -f <freq> (freq is dial frequency in MHz)
     -H don't use (or update) the hashtable
     -m decode wspr-15 .wav file
-    -n write estimated noise level to file "noise.dat"
     -q quick mode - doesn't dig deep for weak signals
     -s slow mode - much slower, yields a few more decodes
     -v verbose
     -w wideband mode displays decoded signals within +/- 150 Hz
+    -z <bias> bias for Fano decoder metric table. default bias is 0.42
 
 infile can be either .wav or .c2
 

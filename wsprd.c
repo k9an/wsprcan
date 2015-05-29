@@ -331,20 +331,20 @@ void usage(void)
     printf("\n");
     printf("Options:\n");
     printf("       -a <path> path to writeable data files, default=\".\"\n");
-    printf("       -e x (x is transceiver dial frequency error in Hz)\n");
-    printf("       -f x (x is transceiver dial frequency in MHz)\n");
+    printf("       -e <error> (transceiver dial frequency error in Hz)\n");
+    printf("       -f <freq> (transceiver dial frequency in MHz)\n");
     // blanking is not yet implemented. The options are accepted for compatibility
     // with development version of wsprd.
     //    printf("       -t n (n is blanking duration in milliseconds)\n");
     //    printf("       -b n (n is pct of time that is blanked)\n");
     printf("       -H do not use (or update) the hash table\n");
     printf("       -m decode wspr-15 .wav file\n");
-    printf("       -n write noise estimates to file noise.dat\n");
+    //    printf("       -n write noise estimates to file noise.dat\n");
     printf("       -q quick mode - doesn't dig deep for weak signals\n");
     printf("       -s slow mode - much slower, yields a few more decodes\n");
     printf("       -v verbose mode\n");
     printf("       -w wideband mode - decode signals within +/- 150 Hz of center\n");
-    printf("       -z x (x is fano metric table bias, default is 0.42)\n");
+    printf("       -z <bias> (fano metric table bias, default is 0.42)\n");
 }
 
 //***************************************************************************
