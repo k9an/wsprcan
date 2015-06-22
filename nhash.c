@@ -1,29 +1,9 @@
 /* 
- This file is part of k9an-wsprd.
+ This file is part of wsprd.
 
- File name: wspr.c
- Description: k9an-wsprd is a detector/demodulator/decoder for K1JT's
- Weak Signal Propagation Reporter (WSPR) mode.
+ File name: nhash.c
 
- Copyright 2014-2015, Steven Franke, K9AN
- License: GNU GPL v3
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-/*
- *-------------------------------------------------------------------------------
+ *------------------------------------------------------------------------------
  *
  * This file is part of the WSPR application, Weak Signal Propogation Reporter
  *
@@ -92,11 +72,7 @@ on 1 byte), but shoehorning those bytes into integers efficiently is messy.
 
 #include <stdio.h>      /* defines printf for tests */
 #include <time.h>       /* defines time_t for timings in the test */
-#ifdef Win32
-#include "win_stdint.h"	/* defines uint32_t etc */
-#else
-#include <stdint.h>	/* defines uint32_t etc */
-#endif
+#include "nhash.h"
 //#include <sys/param.h>  /* attempt to define endianness */
 //#ifdef linux
 //# include <endian.h>    /* attempt to define endianness */
@@ -225,7 +201,7 @@ acceptable.  Do NOT use for cryptographic purposes.
 -------------------------------------------------------------------------------
 */
 
-uint32_t nhash_( const void *key, size_t length, uint32_t initval)
+uint32_t nhash( const void *key, size_t length, uint32_t initval)
 {
   uint32_t a,b,c;                                          /* internal state */
   union { const void *ptr; size_t i; } u;     /* needed for Mac Powerbook G4 */
@@ -393,4 +369,12 @@ uint32_t nhash_( const void *key, size_t length, uint32_t initval)
   c=(32767&c);
 
   return c;
+}
+
+/*
+ * Fortran argument compatible wrapper
+ */
+uint32_t nhash_( const void * key, size_t const * length, uint32_t const * initval)
+{
+  return nhash (key, *length, *initval);
 }

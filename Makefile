@@ -1,16 +1,34 @@
-CC=gcc
-CFLAGS= -I/usr/include -Wall -O2 -Wno-missing-braces
-LDFLAGS = -L/usr/lib 
+CC = gcc
+#CC = clang
+FC = gfortran
+
+FFLAGS = -O2 -Wall -Wno-conversion
+CFLAGS= -g -I/usr/include -Wall -Wno-missing-braces -O2
+LDFLAGS = -L/usr/lib
 LIBS = -lfftw3 -lm
 
-DEPS = fano.h wsprd_utils.h
-OBJ = wsprd.o wsprd_utils.o fano.o tab.o nhash.o
-
+# Default rules
 %.o: %.c $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS)
+	${CC} ${CFLAGS} -c $<
+%.o: %.f
+	${FC} ${FFLAGS} -c $<
+%.o: %.F
+	${FC} ${FFLAGS} -c $<
+%.o: %.f90
+	${FC} ${FFLAGS} -c $<
+%.o: %.F90
+	${FC} ${FFLAGS} -c $<
 
-k9an-wsprd: $(OBJ)
+all:    k9an-wsprd wsprsim 
+
+DEPS =  wsprsim_utils.h wsprd_utils.h fano.h
+
+OBJS2 = wsprsim.o wsprsim_utils.o wsprd_utils.o tab.o fano.o nhash.o 
+wsprsim: $(OBJS2) 
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS) $(LIBS)
 
-clean: 
-	rm *.o
+OBJS3 = wsprd.o wsprsim_utils.o wsprd_utils.o tab.o fano.o nhash.o 
+k9an-wsprd: $(OBJS3)
+	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS) $(LIBS)
+clean:
+	rm *.o k9an-wsprd wsprsim

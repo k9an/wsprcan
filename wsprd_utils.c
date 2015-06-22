@@ -66,7 +66,7 @@ void unpack50( signed char *dat, int32_t *n1, int32_t *n2 )
     *n2=*n2+((i4>>6)&3);
 }
 
-void unpackcall( int32_t ncall, char *call )
+int unpackcall( int32_t ncall, char *call )
 {
     char c[]={'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E',
         'F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T',
@@ -108,10 +108,13 @@ void unpackcall( int32_t ncall, char *call )
                 call[i]='\0';
             }
         }
+    } else {
+        return 0;
     }
+    return 1;
 }
 
-void unpackgrid( int32_t ngrid, char *grid)
+int unpackgrid( int32_t ngrid, char *grid)
 {
     char c[]={'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E',
         'F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T',
@@ -139,17 +142,18 @@ void unpackgrid( int32_t ngrid, char *grid)
         grid[3]=c[n2];
     } else {
         strcpy(grid,"XXXX");
+        return 0;
     }
+    return 1;
 }
 
-void unpackpfx( int32_t nprefix, char *call)
+int unpackpfx( int32_t nprefix, char *call)
 {
     char nc, pfx[4]="", tmpcall[7]="";
     int i;
     int32_t n;
     
     strcpy(tmpcall,call);
-    
     if( nprefix < 60000 ) {
         // add a prefix of 1 to 3 characters
         n=nprefix;
@@ -193,7 +197,11 @@ void unpackpfx( int32_t nprefix, char *call)
             strncat(call,"/",1);
             strncat(call,pfx,2);
         }
-    }  
+        else {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 void deinterleave(unsigned char *sym)
@@ -230,8 +238,8 @@ int unpk_(signed char *message, char hashtab[32768][13], char *call_loc_pow, cha
     char grid[5],grid6[7],cdbm[3];
     
     unpack50(message,&n1,&n2);
-    unpackcall(n1,callsign);
-    unpackgrid(n2, grid);
+    if( !unpackcall(n1,callsign) ) return 1;
+    if( !unpackgrid(n2, grid) ) return 1;
     int ntype = (n2&127) - 64;
     callsign[12]=0;
     grid[4]=0;
@@ -248,7 +256,7 @@ int unpk_(signed char *message, char hashtab[32768][13], char *call_loc_pow, cha
      
      * Type 3: hash, 6 digit grid, power - ntype is negative.
      */
-    
+
     if( (ntype >= 0) && (ntype <= 62) ) {
         int nu=ntype%10;
         if( nu == 0 || nu == 3 || nu == 7 ) {
@@ -261,14 +269,14 @@ int unpk_(signed char *message, char hashtab[32768][13], char *call_loc_pow, cha
             strncat(call_loc_pow," ",1);
             strncat(call_loc_pow,cdbm,2);
             strncat(call_loc_pow,"\0",1);
-            ihash=nhash_(callsign,strlen(callsign),(uint32_t)146);
+            ihash=nhash(callsign,strlen(callsign),(uint32_t)146);
             strcpy(*hashtab+ihash*13,callsign);
         } else {
             nadd=nu;
             if( nu > 3 ) nadd=nu-3;
             if( nu > 7 ) nadd=nu-7;
             n3=n2/128+32768*(nadd-1);
-            unpackpfx(n3,callsign);
+            if( !unpackpfx(n3,callsign) ) return 1;
             ndbm=ntype-nadd;
             memset(call_loc_pow,0,sizeof(char)*23);
             sprintf(cdbm,"%2d",ndbm);
@@ -278,7 +286,7 @@ int unpk_(signed char *message, char hashtab[32768][13], char *call_loc_pow, cha
             strncat(call_loc_pow,"\0",1);
             int nu=ndbm%10;
             if( nu == 0 || nu == 3 || nu == 7 || nu == 10 ) { //make sure power is OK
-                ihash=nhash_(callsign,strlen(callsign),(uint32_t)146);
+                ihash=nhash(callsign,strlen(callsign),(uint32_t)146);
                 strcpy(*hashtab+ihash*13,callsign);
             } else noprint=1;
         }
@@ -294,7 +302,7 @@ int unpk_(signed char *message, char hashtab[32768][13], char *call_loc_pow, cha
                // not testing 4'th and 5'th chars because of this case: <PA0SKT/2> JO33 40
                // grid is only 4 chars even though this is a hashed callsign...
                //         isalpha(grid6[4]) && isalpha(grid6[5]) ) ) {
-               ihash=nhash_(callsign,strlen(callsign),(uint32_t)146);
+               ihash=nhash(callsign,strlen(callsign),(uint32_t)146);
                strcpy(*hashtab+ihash*13,callsign);
            } else noprint=1;
         

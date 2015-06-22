@@ -169,7 +169,7 @@ int fano(
 
   // Start the Fano decoder
   for(i=1;i <= maxcycles;i++) {
-    if((int)(np-nodes) > *maxnp) *maxnp=(int)(np-nodes);
+    if((int)(np-nodes) > (int)*maxnp) *maxnp=(int)(np-nodes);
 #ifdef	debug
     printf("k=%ld, g=%ld, t=%d, m[%d]=%d, maxnp=%d\n",
 	   np-nodes,np->gamma,t,np->i,np->tm[np->i],*maxnp);
