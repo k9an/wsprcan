@@ -1,3 +1,12 @@
+6-22-2015
+
+Many changes and bug fixes to k9an-wsprd. Also added new two-pass decoding 
+mode which can increase the number of spots on a crowded band by as much 
+as 30%. 
+
+Also added new wsprsim program which encodes a message that is supplied
+on the command line and prints out the channel symbols.
+
 5-24-2015 
 
 Moved all callsign unpacking into a function. Added some sanity checks

@@ -14,13 +14,14 @@ USAGE:
 k9an-wsprd [-nqwv] [-f freq] [-e error] infile
 
     -a <path> path to writeable data files, default="."
+    -c writes data to c2 file 000000_0001.c2
     -e <error> (error is dial frequency error in Hz)
     -f <freq> (freq is dial frequency in MHz)
     -H don't use (or update) the hashtable
     -m decode wspr-15 .wav file
     -q quick mode - doesn't dig deep for weak signals
-    -s slow mode - much slower, yields a few more decodes
-    -v verbose
+    -s single pass mode, no subtraction (same as original wsprd)
+    -v verbose mode (shows dupes)
     -w wideband mode displays decoded signals within +/- 150 Hz
     -z <bias> bias for Fano decoder metric table. default bias is 0.42
 
@@ -39,17 +40,18 @@ subband center frequency. The wideband option (-w) extends this to +/- 150 Hz.
 k9an-wsprd maintains a hashtable and will decode all three types of wspr
 messages. An option (-H) is available to turn off use of the hashtable.
 
-k9an-wsprd was optimized to maximize the number of decodes on a crowded band. It 
-uses a looser selection criterion than K1JT's program and therefore tries to 
-decode more potential signals. Sometimes, it gets lucky! 
-
 The symbols are decoded using Phil Karn's sequential decoder routine,
 fano.c.
 
 NOTES:
 This program attempts to maximize the number of successful decodes per transmit
-interval by trying to decode virtually every peak in the averaged spectrum.
-As such, there will be occasional duplicate decodes when two closely spaced 
+interval by trying to decode virtually every peak in the averaged spectrum. 
+The program also implements two-pass decoding, whereby signals that are successfully
+decoded are subtracted one-by-one during the first decoding pass. Then, the 
+decoder is run again. In many cases the subtraction process will uncover signals
+that can then be successfully decoded on the second pass.
+
+There will be occasional duplicate decodes when two closely spaced 
 peaks come from the same signal. The program removes dupes based on callsign 
 and frequency. Two decodes that have the same callsign and estimated frequencies
 that are within 1 Hz will be treated as decodes of the same signal. This
