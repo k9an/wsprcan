@@ -1,3 +1,9 @@
+7-20-2915
+
+Improvements to efficiency of sync search. Added new decoder (Jelinek stack-
+bucket decoder) which is more efficient than Fano decoder. Modified code to
+improve the effectiveness of -O3 -ffast-math optimization.
+
 6-22-2015
 
 Many changes and bug fixes to k9an-wsprd. Also added new two-pass decoding 
