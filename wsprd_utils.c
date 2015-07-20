@@ -225,6 +225,13 @@ void deinterleave(unsigned char *sym)
 }
 
 // used by qsort
+int doublecomp(const void* elem1, const void* elem2)
+{
+    if(*(const double*)elem1 < *(const double*)elem2)
+        return -1;
+    return *(const double*)elem1 > *(const double*)elem2;
+}
+
 int floatcomp(const void* elem1, const void* elem2)
 {
     if(*(const float*)elem1 < *(const float*)elem2)

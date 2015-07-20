@@ -21,6 +21,7 @@ int unpackpfx( int32_t nprefix, char *call);
 void deinterleave(unsigned char *sym);
 
 // used by qsort
+int doublecomp(const void* elem1, const void* elem2);
 int floatcomp(const void* elem1, const void* elem2);
 
 int unpk_( signed char *message, char hashtab[32768][13], char *call_loc_pow, char *callsign);

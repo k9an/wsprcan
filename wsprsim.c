@@ -133,6 +133,9 @@ int main(int argc, char *argv[])
     message=malloc(sizeof(char)*23);
     
     strcpy(c2filename,"000000_0001.c2");
+
+    srand(getpid());
+
     while ( (c = getopt(argc, argv, "cdo:s:")) !=-1 ) {
         switch (c) {
             case 'c':
