@@ -431,14 +431,14 @@ void subtract_signal2(double *id, double *qd, long np,
         
         dphi=twopidt*
         (
-         f0 + ((double)drift0/2.0)*((double)i-(double)nsym/2.0)/((double)nsym/2.0)
+         f0 + (drift0/2.0)*((double)i-(double)nsym/2.0)/((double)nsym/2.0)
          + (cs-1.5)*df
          );
         
         for ( j=0; j<nspersym; j++ ) {
             ii=nspersym*i+j;
-            refi[ii]=refi[ii]+cos(phi); //cannot precompute sin/cos because dphi is changing
-            refq[ii]=refq[ii]+sin(phi);
+            refi[ii]=cos(phi); //cannot precompute sin/cos because dphi is changing
+            refq[ii]=sin(phi);
             phi=phi+dphi;
         }
     }
@@ -450,7 +450,7 @@ void subtract_signal2(double *id, double *qd, long np,
     // leave nfilt zeros as a pad at the beginning of the unfiltered reference signal
     for (i=0; i<nsym*nspersym; i++) {
         k=shift0+i;
-        if( (k>0) & (k<np) ) {
+        if( (k>0) && (k<np) ) {
             ci[i+nfilt] = id[k]*refi[i] + qd[k]*refq[i];
             cq[i+nfilt] = qd[k]*refi[i] - id[k]*refq[i];
         }
@@ -493,7 +493,7 @@ void subtract_signal2(double *id, double *qd, long np,
         }
         k=shift0+i;
         j=i+nfilt;
-        if( (k>0) & (k<np) ) {
+        if( (k>0) && (k<np) ) {
             id[k]=id[k] - (cfi[j]*refi[i]-cfq[j]*refq[i])/norm;
             qd[k]=qd[k] - (cfi[j]*refq[i]+cfq[j]*refi[i])/norm;
         }
@@ -552,7 +552,7 @@ void usage(void)
     printf("Options:\n");
     printf("       -a <path> path to writeable data files, default=\".\"\n");
     printf("       -c write .c2 file at the end of the first pass\n");
-    printf("       -C maximum number of decoder cycles per bit\n");
+    printf("       -C maximum number of decoder cycles per bit, default 5000\n");
     printf("       -d deeper search. Slower, a few more decodes\n");
     printf("       -e x (x is transceiver dial frequency error in Hz)\n");
     printf("       -f x (x is transceiver dial frequency in MHz)\n");
@@ -656,8 +656,8 @@ int main(int argc, char *argv[])
                 maxcycles=(unsigned int) strtoul(optarg,NULL,10);
                 break;
             case 'd':
-//                more_candidates=1;
-                npasses=3;
+                more_candidates=1;
+                maxcycles=10000;
                 break;
             case 'e':
                 dialfreq_error = strtod(optarg,NULL);   // units of Hz
