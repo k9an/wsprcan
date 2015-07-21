@@ -1,7 +1,7 @@
 CC=gcc
 
-CFLAGS= -I/opt/local/include -Wall -O3 -ffast-math -Wno-missing-braces
-LDFLAGS = -L/opt/local/lib 
+CFLAGS= -I/usr/local/include -Wall -O3 -ffast-math -Wno-missing-braces
+LDFLAGS = -L/usr/local/lib 
 LIBS = -lfftw3 -lm
 
 %.o: %.c $(DEPS)
