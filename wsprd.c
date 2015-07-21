@@ -572,7 +572,7 @@ int main(int argc, char *argv[])
     extern char *optarg;
     extern int optind;
     int i,j,k;
-    unsigned char *symbols, *decdata;
+    unsigned char *symbols, *decdata, *channel_symbols;
     signed char message[]={-9,13,-35,123,57,-39,64,0,0,0,0};
     char *callsign, *call_loc_pow;
     char *ptr_to_infile,*ptr_to_infile_suffix;
@@ -596,8 +596,8 @@ int main(int argc, char *argv[])
     double f1, fstep, sync1, drift1;
     double psavg[512];
     double *idat, *qdat;
-    clock_t t0,t00;
-    double tfano=0.0,treadwav=0.0,tcandidates=0.0,tsync0=0.0;
+    clock_t t0,t00,ts0;
+    double tfano=0.0,treadwav=0.0,tcandidates=0.0,tsync0=0.0,ts1=0;
     double tsync1=0.0,tsync2=0.0,ttotal=0.0;
     
     struct result { char date[7]; char time[5]; double sync; double snr;
@@ -605,11 +605,16 @@ int main(int argc, char *argv[])
                     unsigned int cycles; int jitter; };
     struct result decodes[50];
     
-    char hashtab[32768][13];
+//    char hashtab[32768][13];
+    char *hashtab;
+    hashtab=malloc(sizeof(char)*32768*13);
     memset(hashtab,0,sizeof(char)*32768*13);
     int nh;
     symbols=malloc(sizeof(char)*nbits*2);
-    decdata=malloc((nbits+7)/8);
+    decdata=malloc(sizeof(char)*11);
+    channel_symbols=malloc(sizeof(char)*nbits*2);
+//    unsigned char channel_symbols[162];
+
     callsign=malloc(sizeof(char)*13);
     call_loc_pow=malloc(sizeof(char)*23);
     double allfreqs[100];
@@ -775,7 +780,7 @@ int main(int argc, char *argv[])
     strncpy(uttime,ptr_to_infile_suffix-4,4);
     date[6]='\0';
     uttime[4]='\0';
-    
+
     // Do windowed ffts over 2 symbols, stepped by half symbols
     int nffts=4*floor(npoints/512)-1;
     fftin=(fftw_complex*) fftw_malloc(sizeof(fftw_complex)*512);
@@ -793,17 +798,17 @@ int main(int argc, char *argv[])
         if( (fhash=fopen(hash_fname,"r+")) ) {
             while (fgets(line, sizeof(line), fhash) != NULL) {
                 sscanf(line,"%d %s",&nh,hcall);
-                strcpy(*hashtab+nh*13,hcall);
+                strcpy(hashtab+nh*13,hcall);
             }
         } else {
             fhash=fopen(hash_fname,"w+");
         }
         fclose(fhash);
     }
-    
+
     //*************** main loop starts here *****************
     for (ipass=0; ipass<npasses; ipass++) {
-        
+
         if( ipass > 0 && ndecodes_pass == 0 ) break;
         ndecodes_pass=0;
         
@@ -935,6 +940,7 @@ int main(int argc, char *argv[])
         }
         
         t0=clock();
+
         /* Make coarse estimates of shift (DT), freq, and drift
          
          * Look for time offsets up to +/- 8 symbols (about +/- 5.4 s) relative
@@ -954,7 +960,7 @@ int main(int argc, char *argv[])
          span of 162 symbols, with deviation equal to 0 at the center of the
          signal vector.
          */
-        
+
         int idrift,ifr,if0,ifd,k0;
         int kindex;
         double smax,ss,pow,p0,p1,p2,p3;
@@ -997,7 +1003,7 @@ int main(int argc, char *argv[])
             }
         }
         tcandidates += (double)(clock()-t0)/CLOCKS_PER_SEC;
-        
+
         /*
          Refine the estimates of freq, shift using sync as a metric.
          Sync is calculated such that it is a double taking values in the range
@@ -1098,14 +1104,14 @@ int main(int argc, char *argv[])
                                     &jiggered_shift, lagmin, lagmax, lagstep, &drift1, symfac,
                                     &sync1, 2);
                 tsync2 += (double)(clock()-t0)/CLOCKS_PER_SEC;
-                
+
                 sq=0.0;
                 for(i=0; i<162; i++) {
                     y=(double)symbols[i] - 128.0;
                     sq += y*y;
                 }
                 rms=sqrt(sq/162.0);
-                
+
                 if((sync1 > minsync2) && (rms > minrms)) {
                     deinterleave(symbols);
                     t0 = clock();
@@ -1126,7 +1132,6 @@ int main(int argc, char *argv[])
             }
             
             if( worth_a_try && !not_decoded ) {
-                
                 ndecodes_pass++;
                 
                 for(i=0; i<11; i++) {
@@ -1138,7 +1143,8 @@ int main(int argc, char *argv[])
                     }
                     
                 }
-                
+                ts0=clock();
+
                 // Unpack the decoded message, update the hashtable, apply
                 // sanity checks on grid and power, and return
                 // call_loc_pow string and also callsign (for de-duping).
@@ -1147,16 +1153,16 @@ int main(int argc, char *argv[])
                 // subtract even on last pass
                 if( subtraction && (ipass < npasses ) && !noprint ) {
                     
-                    unsigned char channel_symbols[162];
                     
-                    if( get_wspr_channel_symbols(call_loc_pow, channel_symbols) ) {
+                    if( get_wspr_channel_symbols(call_loc_pow, hashtab, channel_symbols) ) {
                         subtract_signal2(idat, qdat, npoints, f1, shift1, drift1, channel_symbols);
                     } else {
                         break;
                     }
                     
                 }
-                
+                ts1=ts1+(double)(clock()-ts0)/CLOCKS_PER_SEC;
+
                 // Remove dupes (same callsign and freq within 3 Hz)
                 int dupe=0;
                 for (i=0; i<uniques; i++) {
@@ -1204,7 +1210,7 @@ int main(int argc, char *argv[])
             writec2file(c2filename, wsprtype, carrierfreq, idat, qdat);
         }
     }
-    
+
     // sort the result in order of increasing frequency
     struct result temp;
     for (j = 1; j <= uniques - 1; j++) {
@@ -1244,9 +1250,9 @@ int main(int argc, char *argv[])
         fftw_export_wisdom_to_file(fp_fftw_wisdom_file);
         fclose(fp_fftw_wisdom_file);
     }
-    
+
     ttotal += (double)(clock()-t00)/CLOCKS_PER_SEC;
-    
+    printf("ts1 %f\n",ts1);
     fprintf(ftimer,"%7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f\n\n",
             treadwav,tcandidates,tsync0,tsync1,tsync2,tfano,ttotal);
     
@@ -1273,8 +1279,8 @@ int main(int argc, char *argv[])
     if( usehashtable ) {
         fhash=fopen(hash_fname,"w");
         for (i=0; i<32768; i++) {
-            if( strncmp(hashtab[i],"\0",1) != 0 ) {
-                fprintf(fhash,"%5d %s\n",i,*hashtab+i*13);
+            if( strncmp(hashtab+i*13,"\0",1) != 0 ) {
+                fprintf(fhash,"%5d %s\n",i,hashtab+i*13);
             }
         }
         fclose(fhash);

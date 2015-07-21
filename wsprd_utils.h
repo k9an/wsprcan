@@ -24,6 +24,6 @@ void deinterleave(unsigned char *sym);
 int doublecomp(const void* elem1, const void* elem2);
 int floatcomp(const void* elem1, const void* elem2);
 
-int unpk_( signed char *message, char hashtab[32768][13], char *call_loc_pow, char *callsign);
+int unpk_( signed char *message, char* hashtab, char *call_loc_pow, char *callsign);
 
 #endif

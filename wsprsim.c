@@ -126,7 +126,8 @@ int main(int argc, char *argv[])
     extern int optind;
     int i, c, printchannel=0, writec2=0;
     float snr=50.0;
-    char *message, *c2filename;
+    char *message, *c2filename, *hashtab;
+    hashtab=malloc(sizeof(char)*32768*13);
     c2filename=malloc(sizeof(char)*15);
 
     // message length is 22 characters
@@ -162,7 +163,7 @@ int main(int argc, char *argv[])
     }
     
     unsigned char channel_symbols[162];
-    get_wspr_channel_symbols(message, channel_symbols);
+    get_wspr_channel_symbols(message, hashtab, channel_symbols);
     
     if( printchannel ) {
         printf("Channel symbols:\n");
