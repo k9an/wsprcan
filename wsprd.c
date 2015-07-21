@@ -596,8 +596,8 @@ int main(int argc, char *argv[])
     double f1, fstep, sync1, drift1;
     double psavg[512];
     double *idat, *qdat;
-    clock_t t0,t00,ts0;
-    double tfano=0.0,treadwav=0.0,tcandidates=0.0,tsync0=0.0,ts1=0;
+    clock_t t0,t00;
+    double tfano=0.0,treadwav=0.0,tcandidates=0.0,tsync0=0.0;
     double tsync1=0.0,tsync2=0.0,ttotal=0.0;
     
     struct result { char date[7]; char time[5]; double sync; double snr;
@@ -1143,7 +1143,6 @@ int main(int argc, char *argv[])
                     }
                     
                 }
-                ts0=clock();
 
                 // Unpack the decoded message, update the hashtable, apply
                 // sanity checks on grid and power, and return
@@ -1152,8 +1151,6 @@ int main(int argc, char *argv[])
 
                 // subtract even on last pass
                 if( subtraction && (ipass < npasses ) && !noprint ) {
-                    
-                    
                     if( get_wspr_channel_symbols(call_loc_pow, hashtab, channel_symbols) ) {
                         subtract_signal2(idat, qdat, npoints, f1, shift1, drift1, channel_symbols);
                     } else {
@@ -1161,7 +1158,6 @@ int main(int argc, char *argv[])
                     }
                     
                 }
-                ts1=ts1+(double)(clock()-ts0)/CLOCKS_PER_SEC;
 
                 // Remove dupes (same callsign and freq within 3 Hz)
                 int dupe=0;
@@ -1198,8 +1194,6 @@ int main(int argc, char *argv[])
                 }
             }
         }
-        
-//        printf("ndecodes_pass %d\n",ndecodes_pass);
         
         if( ipass == 0 && writec2 ) {
             char c2filename[15];
@@ -1252,7 +1246,7 @@ int main(int argc, char *argv[])
     }
 
     ttotal += (double)(clock()-t00)/CLOCKS_PER_SEC;
-    printf("ts1 %f\n",ts1);
+
     fprintf(ftimer,"%7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f\n\n",
             treadwav,tcandidates,tsync0,tsync1,tsync2,tfano,ttotal);
     
