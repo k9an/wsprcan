@@ -584,7 +584,7 @@ int main(int argc, char *argv[])
     int writenoise=0,usehashtable=1,wspr_type=2, ipass;
     int writec2=0, npasses=2, subtraction=1;
     int shift1, lagmin, lagmax, lagstep, ifmin, ifmax, worth_a_try, not_decoded;
-    unsigned int nbits=81, stacksize=50000;
+    unsigned int nbits=81, stacksize=200000;
     unsigned int npoints, metric, cycles, maxnp;
     double df=375.0/256.0/2;
     double freq0[200],snr0[200],drift0[200],sync0[200];
