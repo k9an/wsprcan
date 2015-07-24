@@ -552,12 +552,12 @@ void usage(void)
     printf("Options:\n");
     printf("       -a <path> path to writeable data files, default=\".\"\n");
     printf("       -c write .c2 file at the end of the first pass\n");
-    printf("       -C maximum number of decoder cycles per bit, default 5000\n");
+    printf("       -C maximum number of decoder cycles per bit, default 10000\n");
     printf("       -d deeper search. Slower, a few more decodes\n");
     printf("       -e x (x is transceiver dial frequency error in Hz)\n");
     printf("       -f x (x is transceiver dial frequency in MHz)\n");
-    printf("       -F use the Fano decoder instead of stack decoder\n");
     printf("       -H do not use (or update) the hash table\n");
+    printf("       -J use the stack decoder instead of Fano decoder\n");
     printf("       -m decode wspr-15 .wav file\n");
     printf("       -q quick mode - doesn't dig deep for weak signals\n");
     printf("       -s single pass mode, no subtraction (same as original wsprd)\n");
@@ -580,7 +580,7 @@ int main(int argc, char *argv[])
     char wisdom_fname[200],all_fname[200],spots_fname[200];
     char timer_fname[200],hash_fname[200];
     char uttime[5],date[7];
-    int c,delta,maxpts=65536,verbose=0,quickmode=0,more_candidates=0, stackdecoder=1;
+    int c,delta,maxpts=65536,verbose=0,quickmode=0,more_candidates=0, stackdecoder=0;
     int writenoise=0,usehashtable=1,wspr_type=2, ipass;
     int writec2=0, npasses=2, subtraction=1;
     int shift1, lagmin, lagmax, lagstep, ifmin, ifmax, worth_a_try, not_decoded;
@@ -625,7 +625,7 @@ int main(int argc, char *argv[])
     int uniques=0, noprint=0, ndecodes_pass=0;
     
     // Parameters used for performance-tuning:
-    unsigned int maxcycles=5000;             //Decoder timeout limit
+    unsigned int maxcycles=10000;             //Decoder timeout limit
     double minsync1=0.10;                    //First sync limit
     double minsync2=0.12;                    //Second sync limit
     int iifac=8;                             //Step size in final DT peakup
@@ -644,7 +644,7 @@ int main(int argc, char *argv[])
     idat=malloc(sizeof(double)*maxpts);
     qdat=malloc(sizeof(double)*maxpts);
     
-    while ( (c = getopt(argc, argv, "a:cC:de:f:FHmqstwvz:")) !=-1 ) {
+    while ( (c = getopt(argc, argv, "a:cC:de:f:HJmqstwvz:")) !=-1 ) {
         switch (c) {
             case 'a':
                 data_dir = optarg;
@@ -657,7 +657,6 @@ int main(int argc, char *argv[])
                 break;
             case 'd':
                 more_candidates=1;
-                maxcycles=10000;
                 break;
             case 'e':
                 dialfreq_error = strtod(optarg,NULL);   // units of Hz
@@ -666,11 +665,11 @@ int main(int argc, char *argv[])
             case 'f':
                 dialfreq_cmdline = strtod(optarg,NULL); // units of MHz
                 break;
-            case 'F': //Fano decoder, stack decoder is the default
-                stackdecoder = 0;
-                break;
             case 'H':
                 usehashtable = 0;
+                break;
+            case 'J': //Stack (Jelinek) decoder, Fano decoder is the default
+                stackdecoder = 1;
                 break;
             case 'm':  //15-minute wspr mode
                 wspr_type = 15;

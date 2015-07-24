@@ -1,9 +1,11 @@
 #ifndef JELINEK_H
 #define JELINEK_H
 
+#include <stdint.h>
+
 struct node {
-    unsigned long encstate; // Encoder state
-    unsigned long encstate_highbits;     // least significant 50 bits are the data
+    uint64_t encstate; // Encoder state
+    uint64_t encstate_highbits;     // least significant 50 bits are the data
     int gamma;		         // Cumulative metric to this node
     unsigned int depth;               // depth of this node
     unsigned int jpointer;

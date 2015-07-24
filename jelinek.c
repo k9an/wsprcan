@@ -55,7 +55,7 @@ int jelinek(
     
     // initialize the loop variables
     unsigned int lsym, highbit, ntail=31;
-    unsigned long encstate=0, encstate_highbits=0;
+    uint64_t encstate=0, encstate_highbits=0;
     unsigned int nbuckets=1000;
     unsigned int low_bucket=nbuckets-1; //will be set on first run-through
     unsigned int high_bucket=0;
@@ -65,7 +65,7 @@ int jelinek(
     unsigned int ptr=1;
     unsigned int stackptr=1; //pointer values of 0 are reserved (they mean that a bucket is empty)
     unsigned int depth=0, nbits_minus_ntail=nbits-ntail;
-    unsigned int nbits_minus_one=nbits-1, stacksize_minus_1=stacksize-1;
+    unsigned int stacksize_minus_1=stacksize-1;
     long int totmet0, totmet1, gamma=0;
     
     unsigned int ncycles=maxcycles*nbits;
@@ -146,7 +146,7 @@ int jelinek(
         // we are done if the top entry on the stack is at depth nbits
         // for consistency with how wspr has been using the Phil Karn's decoder
         // we will stop 1 level short at depth 80. 
-        if (depth == nbits_minus_one) {
+        if (depth == nbits) {
             break;
         }
     }
@@ -158,12 +158,12 @@ int jelinek(
     
     // 81 bits is an awkward number... shift everything to the right by one
     // bit first
-    /*    int highbit_lsb=encstate_highbits&(0x0000000000000001);
+    int highbit_lsb=encstate_highbits&(0x0000000000000001);
      encstate_highbits=encstate_highbits>>1;
      encstate=encstate>>1;
      if( highbit_lsb == 1 ) {
-     encstate=encstate|(0x8000000000000000);
-     } */
+         encstate=encstate|(0x8000000000000000);
+     }
     //copy data to output buffer
     data[0]=encstate_highbits>>8;
     data[1]=encstate_highbits&(0x00000000000000ff);
