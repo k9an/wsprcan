@@ -1,7 +1,7 @@
 Beginning with version 1.6, WSJT-X now uses an improved version of the k9an wspr
 decoder that was developed in a collaboration between K9AN and K1JT. The version
-used in WSJT-X has been carefully optimized to optimize weak-signal decoding
-capability while maintaining a low probability of false decode and minimizing
+used in WSJT-X has been carefully optimized for excellent weak-signal decoding
+capability while maintaining a low probability of false decodes and minimizing
 execution time. For the latest wsprd code, visit the WSJT-X svn repository at
 http://sourceforge.net/projects/wsjt/.
 
